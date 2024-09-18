@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Мессенджер</title>
+  <style>
+    /* Общие стили */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Шапка */
+    #header {
+      background-color: #075e54;
+      color: #fff;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+    }
+    #menu-button {
+      font-size: 24px;
+      cursor: pointer;
+      margin-right: 15px;
+    }
+    #header h1 {
+      font-size: 20px;
+      margin: 0;
+    }
+    /* Боковое меню */
+    #side-menu {
+      position: fixed;
+      top: 0;
+      left: -250px;
+      width: 250px;
+      height: 100%;
+      background-color: #fff;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+      transition: left 0.3s ease;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+    }
+    #side-menu.open {
+      left: 0;
+    }
+    #side-menu .close-button {
+      align-self: flex-end;
+      padding: 10px;
+      cursor: pointer;
+      font-size: 24px;
+    }
+    #side-menu h2 {
+      margin: 20px;
+      font-size: 18px;
+    }
+    #side-menu ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex: 1;
+    }
+    #side-menu li {
+      padding: 15px 20px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+    #side-menu li:hover {
+      background-color: #f5f5f5;
+    }
+    /* Основной контейнер */
+    #main-container {
+      flex: 1;
+      display: flex;
+      height: calc(100vh - 60px); /* Учитываем высоту шапки */
+    }
+    /* Левая панель */
+    #left-panel {
+      width: 300px;
+      background-color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #ccc;
+      position: relative;
+    }
+    #chat-search {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+      position: relative;
+    }
+    #chat-search input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    #user-search-results {
+      position: absolute;
+      top: 50px;
+      left: 0;
+      right: 0;
+      background-color: #fff;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      z-index: 1000;
+    }
+    #user-search-results li {
+      padding: 10px;
+      cursor: pointer;
+    }
+    #user-search-results li:hover {
+      background-color: #f0f0f0;
+    }
+    #chat-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+    #chat-list li {
+      padding: 15px;
+      border-bottom: 1px solid #ddd;
+      cursor: pointer;
+    }
+    #chat-list li:hover {
+      background-color: #e6e6e6;
+    }
+    /* Правая панель */
+    #right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    #chat-header {
+      padding: 15px;
+      background-color: #f7f7f7;
+      border-bottom: 1px solid #ccc;
+    }
+    #chat-header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    #chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    #messages {
+      list-style-type: none;
+      margin: 0;
+      padding: 10px;
+      flex: 1;
+      overflow-y: auto;
+      background-color: #fff;
+    }
+    #messages li {
+      margin-bottom: 15px;
+      position: relative;
+      padding: 10px;
+      border-radius: 10px;
+      max-width: 70%;
+      clear: both;
+    }
+    .my-message {
+      background-color: #dcf8c6;
+      align-self: flex-end;
+      margin-left: auto;
+    }
+    .other-message {
+      background-color: #fff;
+      align-self: flex-start;
+      margin-right: auto;
+    }
+    .message-header {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 5px;
+    }
+    .message-text {
+      font-size: 16px;
+      word-wrap: break-word;
+    }
+    .delete-icon {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #888;
+    }
+    #message-form {
+      display: flex;
+      padding: 10px;
+      background-color: #f0f0f0;
+    }
+    #message-input {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 20px;
+      margin-right: 10px;
+      box-sizing: border-box;
+    }
+    #message-form button {
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    #send-button {
+      background-color: #128c7e;
+      color: #fff;
+      border-radius: 20px;
+      padding: 10px 20px;
+    }
+    .notification {
+      text-align: center;
+      color: #888;
+      font-size: 14px;
+      margin: 5px 0;
+    }
+    /* Модальное окно регистрации/входа */
+    #modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      background-color: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1001;
+    }
+    #modal.hidden {
+      display: none;
+    }
+    #modal-content {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      position: relative;
+      width: 300px;
+      box-sizing: border-box;
+    }
+    #modal-content h2 {
+      margin-top: 0;
+    }
+    #modal-content input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    #modal-content button {
+      width: 100%;
+      padding: 10px;
+      background-color: #128c7e;
+      color: #fff;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+    }
+    #modal .close-button {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    /* Кнопка записи */
+    #record-button {
+      font-size: 24px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: #128c7e;
+    }
+    /* Кнопка прикрепления файла */
+    #attach-button {
+      font-size: 24px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: #128c7e;
+    }
+    /* Скрытый input для загрузки файлов */
+    #file-input {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Шапка -->
+  <div id="header">
+    <span id="menu-button">&#9776;</span>
+    <h1>Мессенджер</h1>
+  </div>
+
+  <!-- Боковое меню -->
+  <div id="side-menu">
+    <span class="close-button">&times;</span>
+    <h2>Меню</h2>
+    <ul>
+      <li id="menu-login">Войти/Зарегистрироваться</li>
+      <li id="menu-logout">Выйти из аккаунта</li>
+    </ul>
+  </div>
+
+  <!-- Основной контейнер -->
+  <div id="main-container">
+    <!-- Левая панель -->
+    <div id="left-panel">
+      <div id="chat-search">
+        <input id="user-search-input" type="text" placeholder="Поиск @username" />
+        <ul id="user-search-results"></ul>
+      </div>
+      <ul id="chat-list">
+        <!-- Список чатов с пользователями -->
+      </ul>
+    </div>
+    <!-- Правая панель -->
+    <div id="right-panel">
+      <div id="chat-header">
+        <h2 id="chat-with">Выберите чат</h2>
+      </div>
+      <div id="chat-container">
+        <ul id="messages"></ul>
+        <form id="message-form" action="">
+          <button id="attach-button" type="button">&#128206;</button>
+          <button id="record-button" type="button">&#127908;</button>
+          <input id="message-input" autocomplete="off" placeholder="Введите сообщение" />
+          <button id="send-button" type="submit">Отправить</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно регистрации/входа -->
+  <div id="modal">
+    <div id="modal-content">
+      <span class="close-button">&times;</span>
+      <form id="auth-form">
+        <h2 id="auth-title">Вход / Регистрация</h2>
+        <input id="auth-username" type="text" placeholder="Имя пользователя" maxlength="20" required />
+        <input id="auth-password" type="password" placeholder="Пароль" required />
+        <button type="submit">Войти</button>
+        <p>Нет аккаунта? <a id="toggle-auth-mode" href="#">Зарегистрироваться</a></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Скрытый input для загрузки файлов -->
+  <input id="file-input" type="file" accept="image/*,video/*,audio/mp3" multiple />
+
+  <!-- Подключаем Socket.IO клиентскую библиотеку -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Ваш JavaScript код
+
+    const socket = io();
+
+    // Элементы страницы
+    const menuButton = document.getElementById('menu-button');
+    const sideMenu = document.getElementById('side-menu');
+    const closeMenuButton = document.querySelector('#side-menu .close-button');
+    const menuLogin = document.getElementById('menu-login');
+    const menuLogout = document.getElementById('menu-logout');
+    const modal = document.getElementById('modal');
+    const modalContent = document.getElementById('modal-content');
+    const closeModalButton = modal.querySelector('.close-button'); // Добавлено получение кнопки закрытия
+    const authForm = document.getElementById('auth-form');
+    const authTitle = document.getElementById('auth-title');
+    const authUsername = document.getElementById('auth-username');
+    const authPassword = document.getElementById('auth-password');
+    const toggleAuthMode = document.getElementById('toggle-auth-mode');
+    const mainContainer = document.getElementById('main-container');
+    const leftPanel = document.getElementById('left-panel');
+    const chatList = document.getElementById('chat-list');
+    const userSearchInput = document.getElementById('user-search-input');
+    const userSearchResults = document.getElementById('user-search-results');
+    const rightPanel = document.getElementById('right-panel');
+    const chatHeader = document.getElementById('chat-header');
+    const chatWith = document.getElementById('chat-with');
+    const chatContainer = document.getElementById('chat-container');
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+    const messagesList = document.getElementById('messages');
+    const recordButton = document.getElementById('record-button');
+    const attachButton = document.getElementById('attach-button');
+    const fileInput = document.getElementById('file-input');
+    const sendButton = document.getElementById('send-button');
+
+    let username = '';
+    let isRegisterMode = false;
+    let isRecording = false;
+    let mediaRecorder;
+    let audioChunks = [];
+    let currentChatUser = null; // Текущий пользователь, с которым идет чат
+    let chats = {}; // Объект для хранения чатов с разными пользователями
+
+    // Функции для открытия и закрытия меню
+    function openMenu() {
+      sideMenu.classList.add('open');
+    }
+
+    function closeMenu() {
+      sideMenu.classList.remove('open');
+    }
+
+    menuButton.addEventListener('click', openMenu);
+    closeMenuButton.addEventListener('click', closeMenu);
+
+    // Открытие модального окна
+    function openModal() {
+      modal.classList.remove('hidden');
+    }
+
+    // Закрытие модального окна
+    function closeModal() {
+      modal.classList.add('hidden');
+    }
+
+    // Добавляем обработчик для кнопки закрытия модального окна
+    closeModalButton.addEventListener('click', closeModal);
+
+    // Проверяем, есть ли сохраненный username
+    if (localStorage.getItem('username')) {
+      username = localStorage.getItem('username');
+      socket.emit('authenticate', username);
+      closeModal();
+    } else {
+      openModal();
+    }
+
+    // Обработка формы авторизации
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const enteredUsername = authUsername.value.trim().substring(0, 20);
+      const enteredPassword = authPassword.value.trim();
+
+      if (enteredUsername && enteredPassword) {
+        const endpoint = isRegisterMode ? '/register' : '/login';
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: enteredUsername, password: enteredPassword }),
+        });
+        const data = await response.json();
+        if (data.success) {
+          username = enteredUsername;
+          localStorage.setItem('username', username);
+          socket.emit('authenticate', username);
+          closeModal();
+          messageInput.disabled = false;
+          sendButton.disabled = false;
+          recordButton.disabled = false;
+          attachButton.disabled = false;
+        } else {
+          alert(data.message);
+        }
+      }
+    });
+
+    // Обработка переключения между режимами входа и регистрации
+    toggleAuthMode.addEventListener('click', (e) => {
+      e.preventDefault();
+      isRegisterMode = !isRegisterMode;
+      authTitle.textContent = isRegisterMode ? 'Регистрация' : 'Вход';
+      authForm.querySelector('button').textContent = isRegisterMode ? 'Зарегистрироваться' : 'Войти';
+      toggleAuthMode.textContent = isRegisterMode ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Зарегистрироваться';
+    });
+
+    // Обработка открытия модального окна из меню
+    menuLogin.addEventListener('click', () => {
+      openModal();
+      closeMenu();
+    });
+
+    // Обработка выхода из аккаунта
+    menuLogout.addEventListener('click', () => {
+      username = '';
+      localStorage.removeItem('username');
+      socket.emit('logout');
+      alert('Вы вышли из аккаунта');
+      // Обновляем интерфейс
+      messageInput.disabled = true;
+      sendButton.disabled = true;
+      recordButton.disabled = true;
+      attachButton.disabled = true;
+      chats = {};
+      chatList.innerHTML = '';
+      messagesList.innerHTML = '';
+      chatWith.textContent = 'Выберите чат';
+      currentChatUser = null;
+      openModal();
+    });
+
+    // Обработка поиска пользователей при нажатии Enter
+    userSearchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const query = userSearchInput.value.trim().replace('@', '');
+        if (query.length > 0) {
+          socket.emit('search users', query);
+        }
+      }
+    });
+
+    // Получение результатов поиска пользователей
+    socket.on('search results', (users) => {
+      userSearchResults.innerHTML = '';
+      users.forEach((user) => {
+        if (user !== username && !chats[user]) {
+          const li = document.createElement('li');
+          li.textContent = '@' + user;
+          li.addEventListener('click', () => {
+            startChatWithUser(user);
+            userSearchResults.innerHTML = '';
+            userSearchInput.value = '';
+          });
+          userSearchResults.appendChild(li);
+        }
+      });
+    });
+
+    // Функция начала чата с пользователем
+    function startChatWithUser(user) {
+      if (!chats[user]) {
+        chats[user] = [];
+        addChatToList(user);
+      }
+      currentChatUser = user;
+      chatWith.textContent = '@' + user;
+      loadMessages(user);
+    }
+
+    // Функция добавления чата в левую панель
+    function addChatToList(user) {
+      const li = document.createElement('li');
+      li.textContent = '@' + user;
+      li.addEventListener('click', () => {
+        currentChatUser = user;
+        chatWith.textContent = '@' + user;
+        loadMessages(user);
+      });
+      chatList.appendChild(li);
+    }
+
+    // Функция загрузки сообщений для текущего чата
+    function loadMessages(user) {
+      messagesList.innerHTML = '';
+      const messages = chats[user] || [];
+      messages.forEach((msg) => {
+        addMessageToChat(msg);
+      });
+    }
+
+    // Обработка отправки текстового сообщения
+    messageForm.addEventListener('submit', function(e) {
+      e.preventDefault(); // Предотвращение стандартного отправления формы
+
+      const msg = messageInput.value.trim();
+
+      if (!msg || !currentChatUser) return; // Проверка на пустое сообщение и выбранного пользователя
+
+      const messageData = {
+        id: generateMessageId(),
+        sender: username,
+        receiver: currentChatUser,
+        message: msg,
+        type: 'text',
+      };
+
+      socket.emit('private message', messageData); // Отправляем сообщение на сервер
+      addMessageToChat(messageData); // Добавляем сообщение в чат
+      chats[currentChatUser].push(messageData); // Добавляем сообщение в локальное хранилище чатов
+
+      messageInput.value = ''; // Очищаем поле ввода
+    });
+
+    // Обработка получения личного сообщения
+    socket.on('private message', (data) => {
+      const user = data.sender === username ? data.receiver : data.sender;
+      if (!chats[user]) {
+        chats[user] = [];
+        addChatToList(user);
+      }
+      chats[user].push(data);
+      if (currentChatUser === user) {
+        addMessageToChat(data);
+      }
+    });
+
+    // Функция добавления сообщения в чат
+    function addMessageToChat(data) {
+      const item = document.createElement('li');
+      item.id = data.id;
+      item.classList.add(data.sender === username ? 'my-message' : 'other-message');
+
+      const header = document.createElement('div');
+      header.classList.add('message-header');
+      header.textContent = data.sender === username ? 'Вы' : '@' + data.sender;
+
+      const text = document.createElement('div');
+      text.classList.add('message-text');
+
+      if (data.type === 'text') {
+        text.textContent = data.message;
+      } else if (data.type === 'voice') {
+        const audio = new Audio();
+        audio.src = `data:audio/webm;base64,${data.message}`;
+
+        const playButton = document.createElement('button');
+        playButton.textContent = `Прослушать (${data.duration} сек)`;
+        playButton.addEventListener('click', () => {
+          audio.play();
+        });
+
+        text.appendChild(playButton);
+      } else if (data.type === 'file') {
+        let contentElement;
+
+        if (data.fileType === 'image') {
+          contentElement = document.createElement('img');
+          contentElement.src = `data:${data.mimeType};base64,${data.message}`;
+          contentElement.style.maxWidth = '200px';
+          contentElement.style.cursor = 'pointer';
+          contentElement.addEventListener('click', () => {
+            window.open(contentElement.src, '_blank');
+          });
+        } else if (data.fileType === 'video') {
+          contentElement = document.createElement('video');
+          contentElement.src = `data:${data.mimeType};base64,${data.message}`;
+          contentElement.style.maxWidth = '200px';
+          contentElement.controls = true;
+        } else if (data.fileType === 'audio') {
+          contentElement = document.createElement('audio');
+          contentElement.src = `data:${data.mimeType};base64,${data.message}`;
+          contentElement.controls = true;
+        } else {
+          contentElement = document.createElement('a');
+          contentElement.href = `data:${data.mimeType};base64,${data.message}`;
+          contentElement.download = data.fileName;
+          contentElement.textContent = `Скачать ${data.fileName}`;
+        }
+
+        text.appendChild(contentElement);
+      }
+
+      item.appendChild(header);
+      item.appendChild(text);
+      messagesList.appendChild(item);
+      messagesList.scrollTop = messagesList.scrollHeight;
+    }
+
+    // Генерация уникального ID сообщения
+    function generateMessageId() {
+      return Date.now().toString() + Math.random().toString(36).substring(2, 9);
+    }
+
+    // Обработка аутентификации
+    socket.on('authenticated', (userChats) => {
+      chats = userChats;
+      chatList.innerHTML = '';
+      for (let user in chats) {
+        addChatToList(user);
+      }
+    });
+
+    // Обработка записи голосового сообщения
+    recordButton.addEventListener('click', async () => {
+      if (!username || !currentChatUser) {
+        alert('Пожалуйста, выберите чат.');
+        return;
+      }
+      if (!isRecording) {
+        // Начинаем запись
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.start();
+          isRecording = true;
+          recordButton.style.color = 'red';
+
+          mediaRecorder.ondataavailable = (e) => {
+            audioChunks.push(e.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const duration = Math.round(audioBlob.size / 1000); // Примерная длительность
+            audioChunks = [];
+
+            // Отправляем голосовое сообщение на сервер
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64Audio = reader.result.split(',')[1]; // Получаем base64 строку
+              const messageData = {
+                id: generateMessageId(),
+                sender: username,
+                receiver: currentChatUser,
+                message: base64Audio,
+                duration: duration,
+                type: 'voice',
+              };
+              socket.emit('private message', messageData);
+              addMessageToChat(messageData);
+              if (!chats[currentChatUser]) {
+                chats[currentChatUser] = [];
+              }
+              chats[currentChatUser].push(messageData);
+            };
+            reader.readAsDataURL(audioBlob);
+
+            recordButton.style.color = '#128c7e';
+            isRecording = false;
+          };
+        } catch (error) {
+          console.error('Ошибка при доступе к микрофону:', error);
+          alert('Не удалось получить доступ к микрофону.');
+        }
+      } else {
+        // Останавливаем запись
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      }
+    });
+
+    // Обработка нажатия на кнопку прикрепления файлов
+    attachButton.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    // Обработка выбора файлов
+    fileInput.addEventListener('change', () => {
+      if (!username || !currentChatUser) {
+        alert('Пожалуйста, выберите чат.');
+        return;
+      }
+
+      const files = fileInput.files;
+      if (files.length > 0) {
+        Array.from(files).forEach(file => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64Data = reader.result.split(',')[1];
+            const fileType = file.type.split('/')[0]; // image, video, audio
+            const messageData = {
+              id: generateMessageId(),
+              sender: username,
+              receiver: currentChatUser,
+              message: base64Data,
+              fileName: file.name,
+              fileType: fileType,
+              mimeType: file.type,
+              type: 'file',
+            };
+            socket.emit('private message', messageData);
+            addMessageToChat(messageData);
+            if (!chats[currentChatUser]) {
+              chats[currentChatUser] = [];
+            }
+            chats[currentChatUser].push(messageData);
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+    });
+
+    // Обработка неавторизованных действий
+    socket.on('unauthorized', function() {
+      alert('Сессия истекла. Пожалуйста, войдите снова.');
+      localStorage.removeItem('username');
+      messageInput.disabled = true;
+      sendButton.disabled = true;
+      recordButton.disabled = true;
+      attachButton.disabled = true;
+      openModal();
+    });
+
+  </script>
+</body>
+</html>
